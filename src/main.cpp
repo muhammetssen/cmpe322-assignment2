@@ -11,8 +11,6 @@
 #include "result.h"
 #include <iomanip>
 
-
-
 int main(int argc, char const *argv[])
 {
     // Read input filename
@@ -26,7 +24,7 @@ int main(int argc, char const *argv[])
     std::string input_filename = argv[1];
     std::string output_filename = argv[2];
 
-    std::ifstream input_file("input.txt"); 
+    std::ifstream input_file(argv[1]);
 
     std::string first_line;
     std::string second_line;
@@ -49,61 +47,51 @@ int main(int argc, char const *argv[])
     }
     input_file.close();
 
-    std::vector<std::vector<std::string>> abstract_filenames_seperated(number_of_threads);
-    for (int i = 0; i < number_of_threads; i++)
-    {
-        abstract_filenames_seperated[i] = std::vector<std::string>();
-    }
-
-    for (int i = 0; i < number_of_abstracts / number_of_threads; i++)
-    {
-        for (int j = 0; j < number_of_threads; j++)
-        {
-            abstract_filenames_seperated[j].push_back(abstract_filenames.at(i * number_of_threads + j));
-            // std::cout << "adding " <<abstract_filenames.at(i * number_of_threads + j) << " to thread " << j <<  std::endl;
-        }
-    }
-
-
     std::vector<pthread_t> threads(number_of_threads);
-    std::vector<arg_struct*> args_addresses(number_of_threads);
+    std::vector<arg_struct *> args_addresses;
     pthread_attr_t attr;
-    setvbuf(stdout, NULL, _IONBF, 0);
+    // setvbuf(stdout, NULL, _IONBF, 0);
     pthread_attr_init(&attr);
-
-    std::string t = "input.txt";
+    bool lock = false, file_lock = false;
+    int index = 0;
     for (int i = 0; i < number_of_threads; i++)
     {
-    struct arg_struct* args = new struct arg_struct;
-    args->filenames =  &abstract_filenames_seperated[i];
-    args->query = second_line;
-    args->name = i + 65;
-    args->output_filename = argv[2];
-    args_addresses.push_back(args);
-    pthread_create(&threads.at(i), &attr, *analyze, args);
+        struct arg_struct *args = new struct arg_struct;
+        args->filenames = &abstract_filenames;
+        args->index = &index;
+        args->lock = &lock;
+        args->file_lock = &file_lock;
+        args->query = second_line;
+        args->name = i + 65;
+        args->output_filename = argv[2];
+        args_addresses.push_back(args);
+        pthread_create(&threads.at(i), &attr, *analyze, args);
+        std::cout << "thread creating " << i<< std::endl;
         
     }
     for (int i = 0; i < number_of_threads; i++)
     {
-    pthread_join(threads.at(i),NULL);    
-    delete args_addresses[i];
+        std::cout << "thread joined " << i << std::endl;
+        pthread_join(threads.at(i), NULL);
     }
-    std::sort(Result::results.begin(),Result::results.end(),std::greater<>());
-    std::ofstream outfile(argv[2] ,std::ios_base::app);
+    for (int i = 0; i < number_of_threads; i++)
+    {
+        if (args_addresses[i] != nullptr)
+            delete args_addresses[i];
+    }
+    std::sort(Result::results.begin(), Result::results.end(), std::greater<>());
+    std::ofstream outfile(argv[2], std::ios_base::app);
     outfile << "###" << std::endl;
     for (int i = 0; i < number_of_result; i++)
     {
-        Result* result = &Result::results.at(i);
-        outfile << "Result " << i+1 << ":" << std::endl;
+        Result *result = &Result::results.at(i);
+        outfile << "Result " << i + 1 << ":" << std::endl;
         outfile << "File: " << result->filename << std::endl;
-        outfile << "Score: " << std::fixed << std::setprecision(4) <<(float) ((result->score * 10000) / 10000) << std::endl;
-        outfile << "Summary: " << result->summary <<  std::endl;
+        outfile << "Score: " << std::fixed << std::setprecision(4) << (float)((result->score * 10000) / 10000) << std::endl;
+        outfile << "Summary: " << result->summary << std::endl;
         outfile << "###" << std::endl;
-        
-
     }
     outfile.close();
 
     return 0;
 }
-
