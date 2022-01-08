@@ -38,14 +38,13 @@ void *analyze(void *args_pointer)
         // std::cout << args->name << " with index" << temp << std::endl;
         *(args->index) += 1;
 
+        *args->lock = false;
 
-            *args->lock = false;
         if (temp >= number_of_abstracts)
         { // No more abstract to process. we can close this thread
 
-
             std::cout << "thread closing " << (int)(args->name - 65) << std::endl;
-            
+
             pthread_exit(0);
         }
 
@@ -90,6 +89,10 @@ void *analyze(void *args_pointer)
                                   std::inserter(intersect, intersect.begin()));
             if (intersect.size() > 0)
             {
+                if (sentence.front() == ' ')
+                {
+                    sentence = sentence.substr(1);
+                }
                 summary += sentence + ". ";
             }
         }
@@ -108,6 +111,7 @@ void *analyze(void *args_pointer)
 
         score = (float)intersect.size() / (float)unions.size();
         // std::cout << "Number of intersec with " << filename << "is " << intersect.size() << " with score " << score << summary<< std::endl;
+
         Result::results.push_back(Result(summary, score, current_filename));
     }
 }

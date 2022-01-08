@@ -6,7 +6,6 @@
 #include <sstream>
 #include <pthread.h>
 #include <algorithm>
-
 #include "analyzer.h"
 #include "result.h"
 #include <iomanip>
@@ -24,7 +23,9 @@ int main(int argc, char const *argv[])
     std::string input_filename = argv[1];
     std::string output_filename = argv[2];
 
-    std::ifstream input_file(argv[1]);
+    std::ifstream output_file(output_filename, std::ios::out | std::ofstream::trunc);
+    output_file.close();
+    std::ifstream input_file(input_filename);
 
     std::string first_line;
     std::string second_line;
@@ -66,8 +67,7 @@ int main(int argc, char const *argv[])
         args->output_filename = argv[2];
         args_addresses.push_back(args);
         pthread_create(&threads.at(i), &attr, *analyze, args);
-        std::cout << "thread creating " << i<< std::endl;
-        
+        std::cout << "thread creating " << i << std::endl;
     }
     for (int i = 0; i < number_of_threads; i++)
     {
