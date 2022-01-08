@@ -22,33 +22,33 @@ void *analyze(void *args_pointer)
     std::sort(keywords.begin(), keywords.end());
     std::string current_filename;
 
-    // std::cout << args->query << std::endl;
+    std::cout << "starting to task" << std::endl;
     while (true)
     {
         // we will check index and close the thread if no more abstract file to read.
         // Since we will use index variable, we should go into critical region
-        while (*args->lock)
-        {
-            // wait until lock is released
-        }
-        *args->lock = true; // this thread has the right to go into critical region
-        std::cout << "thread has the lock " << (int)(args->name - 65) << std::endl;
+        // while (*args->lock)
+        // {
+        //     // wait until lock is released
+        // }
+        // *args->lock = true; // this thread has the right to go into critical region
+        pthread_mutex_lock(args->lock);
+
+        // std::cout << "thread has the lock " << (int)(args->name - 65) << std::endl;
 
         int temp = *args->index;
         // std::cout << args->name << " with index" << temp << std::endl;
         *(args->index) += 1;
 
-        *args->lock = false;
-
-        if (temp >= number_of_abstracts)
+        if (*args->index > number_of_abstracts)
         { // No more abstract to process. we can close this thread
 
-            std::cout << "thread closing " << (int)(args->name - 65) << std::endl;
+            // std::cout << "thread closing " << (int)(args->name - 65) << std::endl;
+            pthread_mutex_unlock(args->lock);
 
             pthread_exit(0);
         }
-
-        // *args->lock = false;
+        pthread_mutex_unlock(args->lock);
 
         // there is still more abstracts files to process, get one and increment index
         current_filename = names->at(temp);
@@ -64,15 +64,18 @@ void *analyze(void *args_pointer)
 
         abstract_file.close();
         // std::cout << << std::endl;
-        while (*args->file_lock) // We will write to a file; hence we need critical region
-        {
-        }
+        // while (*args->file_lock) // We will write to a file; hence we need critical region
+        // {
+        // }
 
-        *args->file_lock = true;
+        // *args->file_lock = true;
+        pthread_mutex_lock(args->file_lock);
+
         std::ofstream outfile(args->output_filename, std::ios_base::app);
         outfile << "Thread " << args->name << " is calculating " << current_filename << std::endl;
         outfile.close();
-        *args->file_lock = false;
+        // *args->file_lock = false;
+        pthread_mutex_unlock(args->file_lock);
 
         content.erase(std::remove(content.begin(), content.end(), '\n'), content.end());
 

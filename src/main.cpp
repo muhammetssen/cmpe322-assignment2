@@ -53,7 +53,11 @@ int main(int argc, char const *argv[])
     pthread_attr_t attr;
     // setvbuf(stdout, NULL, _IONBF, 0);
     pthread_attr_init(&attr);
-    bool lock = false, file_lock = false;
+    pthread_mutex_t lock;
+    pthread_mutex_init(&lock, NULL);
+    pthread_mutex_t file_lock;
+    pthread_mutex_init(&file_lock, NULL);
+
     int index = 0;
     for (int i = 0; i < number_of_threads; i++)
     {
@@ -79,6 +83,9 @@ int main(int argc, char const *argv[])
         if (args_addresses[i] != nullptr)
             delete args_addresses[i];
     }
+    pthread_mutex_destroy(&lock);
+    pthread_mutex_destroy(&file_lock);
+
     std::sort(Result::results.begin(), Result::results.end(), std::greater<>());
     std::ofstream outfile(argv[2], std::ios_base::app);
     outfile << "###" << std::endl;
